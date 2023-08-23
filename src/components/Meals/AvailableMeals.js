@@ -1,35 +1,56 @@
 import classes from "./AvailableMeals.module.css";
 import Card from "../UI/Card";
 import MealItem from "./MealItem/MealItem";
-const DUMMY_MEALS = [
-  {
-    id: "m1",
-    name: "Sushi",
-    description: "Finest fish and veggies",
-    price: 22.99,
-  },
-  {
-    id: "m2",
-    name: "Schnitzel",
-    description: "A german specialty!",
-    price: 16.5,
-  },
-  {
-    id: "m3",
-    name: "Barbecue Burger",
-    description: "American, raw, meaty",
-    price: 12.99,
-  },
-  {
-    id: "m4",
-    name: "Green Bowl",
-    description: "Healthy...and green...",
-    price: 18.99,
-  },
-];
-
+import { useEffect, useState } from "react";
+import { MEALS_API_URL } from "../../url";
 const AvailableMeals = () => {
-  const mealsList = DUMMY_MEALS.map((meals) => (
+  const [meals, setMeals] = useState([]);
+  const [isloading, setIsloading] = useState(true);
+  const [httpError, setHttpError] = useState();
+
+  useEffect(() => {
+    const fetchMeals = async () => {
+      const response = await fetch(
+        MEALS_API_URL
+      );
+      if (!response.ok) {
+        throw Error("Something went wrong!");
+      }
+      const responseData = await response.json();
+      const loadedMeals = [];
+      for (const key in responseData) {
+        loadedMeals.push({
+          id: key,
+          name: responseData[key].name,
+          description: responseData[key].description,
+          price: responseData[key].price,
+        });
+      }
+      setMeals(loadedMeals);
+      setIsloading(false);
+    };
+
+    fetchMeals().catch((error) => {
+      setIsloading(false);
+      setHttpError(error.message);
+    });
+  }, []);
+
+  if (isloading) {
+    return (
+      <section className={classes.MealLoading}>
+        <p>Loading...</p>
+      </section>
+    );
+  }
+  if (httpError) {
+    return (
+      <section className={classes.MealError}>
+        <p>{httpError}</p>
+      </section>
+    );
+  }
+  const mealsList = meals.map((meals) => (
     <MealItem
       key={meals.id}
       name={meals.name}
